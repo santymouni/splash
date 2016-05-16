@@ -110,6 +110,7 @@ QT_KEY_INPUTS = {
     Qt.Key_Enter: '\n',
     Qt.Key_Space: ' ',
     Qt.Key_Tab: '\t',
+    Qt.Key_Delete: chr(127),
 }
 
 # A global reference must be kept to QApplication, otherwise the process will
