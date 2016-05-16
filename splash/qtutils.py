@@ -106,8 +106,8 @@ EDMACRO_SHORTCUTS = {
 # Qt key types mapped to the input they generate
 QT_KEY_INPUTS = {
     # TODO: More needed?
-    Qt.Key_Return: '\n',
-    Qt.Key_Enter: '\n',
+    Qt.Key_Return: '\r',
+    Qt.Key_Enter: '\r',
     Qt.Key_Space: ' ',
     Qt.Key_Tab: '\t',
     Qt.Key_Delete: chr(127),
