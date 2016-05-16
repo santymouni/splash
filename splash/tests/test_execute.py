@@ -3675,7 +3675,7 @@ class KeyEventsTest(BaseLuaRenderTest):
                 splash:send_keys('Foo SPC Bar')
                 splash:send_keys('TAB')
                 splash:send_keys('Baz')
-                assert(splash:wait(0.5))
+                assert(splash:wait(0))
                 inputs = join_inputs()
                 return inputs
             end
@@ -3695,7 +3695,7 @@ class KeyEventsTest(BaseLuaRenderTest):
                     }
                 ]])
                 splash:send_text('Hello World!')
-                assert(splash:wait(0.5))
+                assert(splash:wait(0))
                 return get_input()
             end
             """, {"url": self.mockurl("focused-input")})
@@ -3713,7 +3713,7 @@ class KeyEventsTest(BaseLuaRenderTest):
                     }
                 ]])
                 splash:send_keys('<Tab> Username <Tab> Password <Return>')
-                assert(splash:wait(0.5))
+                assert(splash:wait(0))
                 return get_result()
             end
             """, {"url": self.mockurl("form-inputs-event-page")})
@@ -3731,7 +3731,7 @@ class KeyEventsTest(BaseLuaRenderTest):
                     }
                 ]])
                 splash:send_text('Поехали!')
-                assert(splash:wait(0.5))
+                assert(splash:wait(0))
                 return get_input()
             end
             """, {"url": self.mockurl("focused-input")})
@@ -3749,7 +3749,7 @@ class KeyEventsTest(BaseLuaRenderTest):
                     }
                 ]])
                 splash:send_keys('П о е х а л и !')
-                assert(splash:wait(0.5))
+                assert(splash:wait(0))
                 return get_input()
             end
             """, {"url": self.mockurl("focused-input")})
@@ -3767,7 +3767,7 @@ class KeyEventsTest(BaseLuaRenderTest):
                     }
                 ]])
                 splash:send_text('Hello World!\\nHello indeed!')
-                assert(splash:wait(0.5))
+                assert(splash:wait(0))
                 return get_input()
             end
             """, {"url": self.mockurl("focused-input")})
@@ -3780,7 +3780,7 @@ class KeyEventsTest(BaseLuaRenderTest):
         resp = self.request_lua(u"""
             function main(splash)
                 assert(splash:go(splash.args.url))
-                assert(splash:wait(0.5))
+                assert(splash:wait(05))
                 get_input = splash:jsfunc([[
                     function () {
                         return document.getElementById('text').value
@@ -3789,7 +3789,7 @@ class KeyEventsTest(BaseLuaRenderTest):
                 splash:send_text('Hello World!')
                 splash:send_keys('RET <Enter>')
                 splash:send_text('Hello indeed!')
-                assert(splash:wait(0.5))
+                assert(splash:wait(0))
                 return get_input()
             end
             """, {"url": self.mockurl("focused-input")})
@@ -3807,7 +3807,7 @@ class KeyEventsTest(BaseLuaRenderTest):
                     }
                 ]])
                 splash:send_text('RET ESC TAB SPC')
-                assert(splash:wait(0.5))
+                assert(splash:wait(0))
                 return get_input()
             end
             """, {"url": self.mockurl("focused-input")})
@@ -3825,7 +3825,7 @@ class KeyEventsTest(BaseLuaRenderTest):
                     }
                 ]])
                 splash:send_keys('R E T SPC E S C SPC T A B SPC S P C')
-                assert(splash:wait(0.5))
+                assert(splash:wait(0))
                 return get_input()
             end
             """, {"url": self.mockurl("focused-input")})
@@ -3844,7 +3844,7 @@ class KeyEventsTest(BaseLuaRenderTest):
                 ]])
                 splash:send_text('Hello World!')
                 splash:send_keys('<Home> DEL DEL DEL DEL DEL DEL')
-                assert(splash:wait(0.5))
+                assert(splash:wait(0))
                 return get_input()
             end
             """, {"url": self.mockurl("focused-input")})
@@ -3873,7 +3873,7 @@ class KeyEventsTest(BaseLuaRenderTest):
                 splash:send_keys('<Backspace>')
                 splash:send_keys('<Backspace>')
                 splash:send_keys('<Backspace>')
-                assert(splash:wait(0.5))
+                assert(splash:wait(0))
                 return get_input()
             end
             """, {"url": self.mockurl("focused-input")})
@@ -3898,7 +3898,7 @@ class KeyEventsTest(BaseLuaRenderTest):
                 splash:send_text('Hello World!')
                 splash:send_keys('RET <Return> <Enter>')
                 splash:send_keys('DEL <Delete>')
-                assert(splash:wait(0.5))
+                assert(splash:wait(0))
                 return get_result()
             end
             """, {"url": self.mockurl("key-press-event-logger-page")})
@@ -3929,7 +3929,7 @@ class KeyEventsTest(BaseLuaRenderTest):
                 splash:send_keys('TAB <Tab>')
                 splash:send_keys('DEL <Delete>')
                 splash:send_keys('ESC')
-                assert(splash:wait(0.5))
+                assert(splash:wait(0))
                 return get_result()
             end
             """, {"url": self.mockurl("key-up-down-event-logger-page")})
@@ -3967,7 +3967,7 @@ class KeyEventsTest(BaseLuaRenderTest):
                     }
                 ]])
                 splash:send_text('Hello World!')
-                assert(splash:wait(0.5))
+                assert(splash:wait(0))
                 return get_result()
             end
             """, {"url": self.mockurl("key-up-down-event-logger-page")})
