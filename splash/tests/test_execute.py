@@ -3719,3 +3719,262 @@ class KeyEventsTest(BaseLuaRenderTest):
             """, {"url": self.mockurl("form-inputs-event-page")})
         self.assertStatusCode(resp, 200)
         self.assertEqual('Username|Password', resp.text)
+
+    def test_send_text_unicode(self):
+        resp = self.request_lua(u"""
+            function main(splash)
+                assert(splash:go(splash.args.url))
+                assert(splash:wait(0.5))
+                get_input = splash:jsfunc([[
+                    function () {
+                        return document.getElementById('text').value
+                    }
+                ]])
+                splash:send_text('Поехали!')
+                assert(splash:wait(0.5))
+                return get_input()
+            end
+            """, {"url": self.mockurl("focused-input")})
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(u'Поехали!', resp.text)
+
+    def test_send_keys_unicode(self):
+        resp = self.request_lua(u"""
+            function main(splash)
+                assert(splash:go(splash.args.url))
+                assert(splash:wait(0.5))
+                get_input = splash:jsfunc([[
+                    function () {
+                        return document.getElementById('text').value
+                    }
+                ]])
+                splash:send_keys('П о е х а л и !')
+                assert(splash:wait(0.5))
+                return get_input()
+            end
+            """, {"url": self.mockurl("focused-input")})
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(u'Поехали!', resp.text)
+
+    def test_send_text_escaped_newline(self):
+        resp = self.request_lua(u"""
+            function main(splash)
+                assert(splash:go(splash.args.url))
+                assert(splash:wait(0.5))
+                get_input = splash:jsfunc([[
+                    function () {
+                        return document.getElementById('text').value
+                    }
+                ]])
+                splash:send_text('Hello World!\\nHello indeed!')
+                assert(splash:wait(0.5))
+                return get_input()
+            end
+            """, {"url": self.mockurl("focused-input")})
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(u'Hello World!\nHello indeed!', resp.text)
+
+    def test_send_text_w_newline(self):
+        # Regardless of the events sent, browser must return these newline /
+        # carriage return as just new line.
+        resp = self.request_lua(u"""
+            function main(splash)
+                assert(splash:go(splash.args.url))
+                assert(splash:wait(0.5))
+                get_input = splash:jsfunc([[
+                    function () {
+                        return document.getElementById('text').value
+                    }
+                ]])
+                splash:send_text('Hello World!')
+                splash:send_keys('RET <Enter>')
+                splash:send_text('Hello indeed!')
+                assert(splash:wait(0.5))
+                return get_input()
+            end
+            """, {"url": self.mockurl("focused-input")})
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(u'Hello World!\n\nHello indeed!', resp.text)
+
+    def test_send_text_edmacro_words(self):
+        resp = self.request_lua("""
+            function main(splash)
+                assert(splash:go(splash.args.url))
+                assert(splash:wait(0.5))
+                get_input = splash:jsfunc([[
+                    function () {
+                        return document.getElementById('text').value
+                    }
+                ]])
+                splash:send_text('RET ESC TAB SPC')
+                assert(splash:wait(0.5))
+                return get_input()
+            end
+            """, {"url": self.mockurl("focused-input")})
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(u'RET ESC TAB SPC', resp.text)
+
+    def test_send_keys_edmacro_words(self):
+        resp = self.request_lua("""
+            function main(splash)
+                assert(splash:go(splash.args.url))
+                assert(splash:wait(0.5))
+                get_input = splash:jsfunc([[
+                    function () {
+                        return document.getElementById('text').value
+                    }
+                ]])
+                splash:send_keys('R E T SPC E S C SPC T A B SPC S P C')
+                assert(splash:wait(0.5))
+                return get_input()
+            end
+            """, {"url": self.mockurl("focused-input")})
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(u'RET ESC TAB SPC', resp.text)
+
+    def test_send_keys_DEL(self):
+        resp = self.request_lua("""
+            function main(splash)
+                assert(splash:go(splash.args.url))
+                assert(splash:wait(0.5))
+                get_input = splash:jsfunc([[
+                    function () {
+                        return document.getElementById('text').value
+                    }
+                ]])
+                splash:send_text('Hello World!')
+                splash:send_keys('<Home> DEL DEL DEL DEL DEL DEL')
+                assert(splash:wait(0.5))
+                return get_input()
+            end
+            """, {"url": self.mockurl("focused-input")})
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(u'World!', resp.text)
+
+    def test_send_keys_complex(self):
+        resp = self.request_lua("""
+            function main(splash)
+                assert(splash:go(splash.args.url))
+                assert(splash:wait(0.5))
+                get_input = splash:jsfunc([[
+                    function () {
+                        return document.getElementById('text').value
+                    }
+                ]])
+                splash:send_text('Foo Bar Hello World!')
+                splash:send_keys('<Home> DEL DEL DEL DEL')
+                splash:send_keys('DEL DEL DEL DEL')
+                splash:send_keys('<End>')
+                splash:send_keys('<Left>')
+                splash:send_keys('<Backspace>')
+                splash:send_keys('<Backspace>')
+                splash:send_keys('<Backspace>')
+                splash:send_keys('<Backspace>')
+                splash:send_keys('<Backspace>')
+                splash:send_keys('<Backspace>')
+                splash:send_keys('<Backspace>')
+                assert(splash:wait(0.5))
+                return get_input()
+            end
+            """, {"url": self.mockurl("focused-input")})
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(u'Hell!', resp.text)
+
+    def test_send_keys_events_press(self):
+        resp = self.request_lua("""
+            function main(splash)
+                assert(splash:go(splash.args.url))
+                assert(splash:wait(0.5))
+                get_result = splash:jsfunc([[
+                    function () {
+                        var res = [];
+                        var evs = document.querySelectorAll('ul#output li');
+                        for (var i = 0; i < evs.length; i++) {
+                            res.push(evs[i].innerHTML);
+                        }
+                        return res.join(',');
+                    }
+                ]])
+                splash:send_text('Hello World!')
+                splash:send_keys('RET <Return> <Enter>')
+                splash:send_keys('DEL <Delete>')
+                assert(splash:wait(0.5))
+                return get_result()
+            end
+            """, {"url": self.mockurl("key-press-event-logger-page")})
+        self.assertStatusCode(resp, 200)
+        expected = list(map(lambda c: ord(c), 'Hello World!'))
+        # Return, Return, Enter, Delete, Delete
+        expected += [ord('\r'), ord('\r'), ord('\r'), 127, 127]
+        result = list(map(int, resp.text.split(',')))
+        self.assertEqual(expected, result)
+
+    def test_send_keys_events_updown(self):
+        resp = self.request_lua("""
+            function main(splash)
+                assert(splash:go(splash.args.url))
+                assert(splash:wait(0.5))
+                get_result = splash:jsfunc([[
+                    function () {
+                        var res = [];
+                        var evs = document.querySelectorAll('ul#output li');
+                        for (var i = 0; i < evs.length; i++) {
+                            res.push(evs[i].innerHTML);
+                        }
+                        return res.join(',');
+                    }
+                ]])
+                splash:send_keys('RET <Return> <Enter>')
+                splash:send_keys('SPC <Space>')
+                splash:send_keys('TAB <Tab>')
+                splash:send_keys('DEL <Delete>')
+                splash:send_keys('ESC')
+                assert(splash:wait(0.5))
+                return get_result()
+            end
+            """, {"url": self.mockurl("key-up-down-event-logger-page")})
+        self.assertStatusCode(resp, 200)
+        expected = [
+            13, -13,    # RET
+            13, -13,    # <Return>
+            13, -13,    # <Enter>
+            32, -32,    # SPC
+            32, -32,    # <Space>
+            9, -9,      # TAB
+            9, -9,      # <Tab>
+            46, -46,    # DEL
+            46, -46,    # <Delete>
+            27, -27     # ESC
+        ]
+        result = list(map(int, resp.text.split(',')))
+        self.assertEqual(expected, result)
+
+    def test_send_text_events_updown(self):
+        # For now, send text does not send proper keycodes for up/down events
+        # defaulting to 0 (key unknown)
+        resp = self.request_lua("""
+            function main(splash)
+                assert(splash:go(splash.args.url))
+                assert(splash:wait(0.5))
+                get_result = splash:jsfunc([[
+                    function () {
+                        var res = [];
+                        var evs = document.querySelectorAll('ul#output li');
+                        for (var i = 0; i < evs.length; i++) {
+                            res.push(evs[i].innerHTML);
+                        }
+                        return res.join(',');
+                    }
+                ]])
+                splash:send_text('Hello World!')
+                assert(splash:wait(0.5))
+                return get_result()
+            end
+            """, {"url": self.mockurl("key-up-down-event-logger-page")})
+        self.assertStatusCode(resp, 200)
+        expected = []
+        for i in range(0, len('Hello World!') * 2):
+            prefix = '+' if (i % 2 == 0) else '-'
+            expected.append(prefix + '0')
+        result = list(resp.text.split(','))
+        self.assertEqual(expected, result)
