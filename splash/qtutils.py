@@ -357,8 +357,10 @@ def qt_send_text(text, target, key_type=0):
     keyboard macro."
     """
     modifiers = QApplication.keyboardModifiers()
-    event = QKeyEvent(QEvent.KeyPress, key_type, modifiers, text)
-    QApplication.postEvent(target, event)
-    # Key release does not generate any input
-    event = QKeyEvent(QEvent.KeyRelease, key_type, modifiers, '')
-    QApplication.postEvent(target, event)
+    text = list(text) or ['']
+    for x in text:
+        event = QKeyEvent(QEvent.KeyPress, key_type, modifiers, x)
+        QApplication.postEvent(target, event)
+        # Key release does not generate any input
+        event = QKeyEvent(QEvent.KeyRelease, key_type, modifiers, '')
+        QApplication.postEvent(target, event)
