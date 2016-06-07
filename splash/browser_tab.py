@@ -638,26 +638,6 @@ class BrowserTab(QObject):
             result_protection=False
         )
 
-    def with_timeout(self, run_coro, timeout, callback, errback):
-        timer = QTimer(self)
-        timer.setSingleShot(True)
-
-        def timer_callback():
-            print("timer is over!")
-
-        timer.timeout.connect(timer_callback)
-
-        def coro_success(result):
-            if timer.isActive():
-                timer.stop()
-
-            callback(result)
-
-        run_coro(coro_success, errback)()
-
-        timer.start(timeout)
-        self._active_timers.add(timer)
-
     def wait_for_resume(self, js_source, callback, errback, timeout):
         """
         Run some Javascript asynchronously.
