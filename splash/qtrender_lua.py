@@ -487,6 +487,56 @@ class Splash(BaseExposedObject):
         ))
         return cmd
 
+    @command(async=True, sets_callback=True, decode_arguments=False)
+    def with_timeout(self, timeout, callback):
+        if timeout is None:
+            ScriptError({
+                "argument": "timeout",
+                "message": "splash:with_timeout timeout must be specified",
+                "splash_method": "with_timeout",
+            })
+        if not isinstance(timeout, (float, int)):
+            raise ScriptError({
+                "argument": "timeout",
+                "message": "splash:with_timeout timeout must be a number",
+                "splash_method": "with_timeout",
+            })
+
+        timeout = int(float(timeout) * 1000)
+
+        if timeout < 0:
+            raise ScriptError({
+                "argument": "timeout",
+                "message": "splash:with_timeout timeout must be >= 0",
+                "splash_method": "with_timeout",
+            })
+
+        if lupa.lua_type(callback) != 'function':
+            raise ScriptError({
+                "argument": "callback",
+                "message": "splash:with_timeout callback is not a function",
+                "splash_method": "with_timeout",
+            })
+
+        run_coro = functools.partial(
+            self.get_coroutine_run_func, "splash:with_timeout", callback
+        )
+
+        def success(result):
+            cmd.return_result(True, result)
+
+        def error(error_info):
+            cmd.return_result(None, self._error_info_to_lua(error_info))
+
+        cmd = AsyncBrowserCommand("with_timeout", dict(
+            run_coro=run_coro,
+            timeout=timeout,
+            callback=success,
+            errback=error
+        ))
+
+        return cmd
+
     @command(async=True, decode_arguments=False)
     def go(self, url, baseurl=None, headers=None, http_method="GET", body=None, formdata=None):
         url = self.lua.lua2python(url, max_depth=1)
@@ -1415,7 +1465,7 @@ class SplashCoroutineRunner(BaseScriptRunner):
     """
     Utility class for running Splash async functions (e.g. callbacks).
     """
-
+    
     def __init__(self, lua, splash, log, sandboxed):
         self.splash = splash
         super(SplashCoroutineRunner, self).__init__(lua=lua, log=log, sandboxed=sandboxed)
