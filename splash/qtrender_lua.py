@@ -526,8 +526,8 @@ class Splash(BaseExposedObject):
         qtimer.setSingleShot(True)
 
         def timer_callback():
-            coro_runner.stop()
-            cmd.return_result(False, ScriptError("Timeout is over"))
+            run_coro.runner.stop()
+            cmd.return_result(False, "timeout_over")
 
         qtimer.timeout.connect(timer_callback)
 
@@ -539,27 +539,24 @@ class Splash(BaseExposedObject):
             cmd.return_result(True, result)
 
         def coro_error(ex):
-            if qtimer.isActive():
+            if not qtimer.isActive():
                 return
 
             qtimer.stop()
 
             # TODO: make error more verbose (e.g. add line number)
-            cmd.return_result(False, ScriptError({
-                'type': ScriptError.SPLASH_LUA_ERROR,
-                'message': str(ex.args[0]),
-            }))
+            cmd.return_result(False, str(ex.args[0]))
 
         run_coro = self.get_coroutine_run_func(
             "splash:with_timeout", callback, coro_success, coro_error)
 
-        coro_runner = run_coro()
+        def start():
+            qtimer.start(timeout)
+            run_coro.runner = run_coro()
 
-        qtimer.clear = lambda x: x
-
-        qtimer.start(timeout)
-
-        cmd = AsyncLuaCommand("with_timeout", None)
+        cmd = AsyncLuaCommand("with_timeout", dict(
+            callback=start
+        ))
 
         return cmd
 
@@ -1174,6 +1171,8 @@ class Splash(BaseExposedObject):
         if isinstance(cmd, AsyncBrowserCommand):
             meth = getattr(self.tab, cmd.name)
             return meth(**cmd.kwargs)
+        elif isinstance(cmd, AsyncLuaCommand):
+            cmd.kwargs["callback"]()
 
     def get_coroutine_run_func(self, name, callback,
                                return_result=None, return_error=None):
