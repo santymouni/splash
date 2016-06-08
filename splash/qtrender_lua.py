@@ -526,6 +526,7 @@ class Splash(BaseExposedObject):
         qtimer.setSingleShot(True)
 
         def timer_callback():
+            coro_runner.stop()
             cmd.return_result(False, ScriptError("Timeout is over"))
 
         qtimer.timeout.connect(timer_callback)
@@ -552,7 +553,7 @@ class Splash(BaseExposedObject):
         run_coro = self.get_coroutine_run_func(
             "splash:with_timeout", callback, coro_success, coro_error)
 
-        run_coro()
+        coro_runner = run_coro()
 
         qtimer.clear = lambda x: x
 
@@ -1187,6 +1188,7 @@ class Splash(BaseExposedObject):
             runner = SplashCoroutineRunner(self.lua, self, log, False)
             coro = self.lua.create_coroutine(callback)
             runner.start(coro, coro_args, return_result, return_error)
+            return runner
 
         return func
 
