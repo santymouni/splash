@@ -2230,3 +2230,30 @@ Trigger mouse release event in web page.
 **Async:**: no.
 
 See notes about mouse events in :ref:`splash-mouse-click`.
+
+
+.. _splash-with-timeout:
+
+splash:with_timeout
+-------------------
+
+Run the callback with the allowed timeout
+
+**Signature:** ``ok, result = splash:with_timeout(callback, timeout)``
+
+**Parameters:**
+
+* callback - the function to run
+* timeout - timeout, in seconds
+
+**Returns:** ``ok, result`` pair. If ``ok`` is nil then error happened during
+the function call or the timeout has passed; ``result`` provides an information
+about error type. Otherwise, if ``ok`` is not nil then ``result`` contains the
+result of the executed function.
+
+**Async:** yes.
+
+Example:
+
+.. literalinclude:: ../splash/examples/with-timeout.lua
+   :language: lua
