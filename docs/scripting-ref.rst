@@ -2246,14 +2246,43 @@ Run the callback with the allowed timeout
 * callback - the function to run
 * timeout - timeout, in seconds
 
-**Returns:** ``ok, result`` pair. If ``ok`` is nil then error happened during
+**Returns:** ``ok, result`` pair. If ``ok`` is not ``true`` then error happened during
 the function call or the timeout has passed; ``result`` provides an information
-about error type. Otherwise, if ``ok`` is not nil then ``result`` contains the
-result of the executed function.
+about error type. If ``result`` is equal to ``timeout_over`` then specified timeout is elapsed.
+Otherwise, if ``ok`` is ``true`` then ``result`` contains the result of the executed function.
 
 **Async:** yes.
 
-Example:
+Example 1:
 
 .. literalinclude:: ../splash/examples/with-timeout.lua
    :language: lua
+
+
+Note that the can interrupt the running callback only if some async function is called.
+Otherwise you should wait until the operation is finished.
+
+Example 2 - in this case the callback cannot be interrupted.
+
+.. code-block:: lua
+
+    function main(splash)
+        local ok, result = splash:with_timeout(function()
+            for i=1,100000000 do print(i) end -- blocking operation
+        end, 0.1)
+
+        return result
+    end
+
+Example 3 - in this case the callback can be interrupted.
+
+.. code-block:: lua
+
+    function main(splash)
+        local ok, result = splash:with_timeout(function()
+            splash:wait(1)
+            splash:go(splash.args.url)
+        end, 0.1)
+
+        return result
+    end

@@ -833,3 +833,116 @@ class CallLaterTest(BaseLuaRenderTest):
         """)
         self.assertStatusCode(resp, 200)
         self.assertEqual(resp.text, "error")
+
+
+class WithTimeoutTest(BaseLuaRenderTest):
+    def test_with_timeout(self):
+        resp = self.request_lua("""
+        function main(splash)
+            local o = { val = 2 }
+            assert(splash:with_timeout(function()
+                splash:wait(0.1)
+                o["val"] = 1
+            end, 0.2))
+
+            return o["val"]
+        end
+        """)
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(resp.text, '1')
+
+    def test_bad_callback(self):
+        resp = self.request_lua("""
+            function main(splash)
+                local ok, result = splash:with_timeout("not a function", 0.1)
+            end
+            """)
+
+        err = self.assertScriptError(resp, ScriptError.SPLASH_LUA_ERROR)
+        self.assertErrorLineNumber(resp, 3)
+        self.assertEqual(err['info']['splash_method'], 'with_timeout')
+
+    def test_bad_timeout(self):
+        resp = self.request_lua("""
+            function main(splash)
+                local ok, result = splash:with_timeout(function() end, -1)
+            end
+            """)
+
+        err = self.assertScriptError(resp, ScriptError.SPLASH_LUA_ERROR)
+        self.assertErrorLineNumber(resp, 3)
+        self.assertEqual(err['info']['splash_method'], 'with_timeout')
+
+    def test_timeout(self):
+        resp = self.request_lua("""
+            function main(splash)
+                local o = { val = 2 }
+                local ok, result = splash:with_timeout(function()
+                    splash:wait(0.2)
+                    o["val"] = 1
+                end, 0.1)
+
+                return { result = result, val = o["val"] }
+            end
+            """)
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(resp.json(), {"val": 2, "result": "timeout_over"})
+
+    def test_error_propagation(self):
+        resp = self.request_lua("""
+            function main(splash)
+                assert(splash:with_timeout(function()
+                    splash:wait(0.1)
+                    assert(splash:with_timeout(function()
+                        splash:wait(0.1)
+                        assert(splash:with_timeout(function()
+                            splash:wait(0.1)
+                            error("error from callback")
+                        end, 0.5))
+                    end, 0.5))
+                end, 0.5))
+            end
+            """)
+
+        err = self.assertScriptError(resp, ScriptError.LUA_ERROR)
+        self.assertErrorLineNumber(resp, 3)
+        self.assertEqual(err['info']['error'], 'error from callback')
+
+    def test_callback_stop(self):
+        resp = self.request_lua("""
+            function main(splash)
+                local o = { val = 2 }
+                local ok, result = splash:with_timeout(function()
+                    splash:wait(0.5)
+                    o["val"] = 1
+                end, 0.1)
+
+                splash:wait(1)
+
+                return o["val"]
+            end
+            """)
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(resp.text, '2')
+
+    def test_nested_callbacks(self):
+        resp = self.request_lua("""
+            function main(splash)
+                local ok, result = splash:with_timeout(function()
+                    splash:wait(0.1)
+                    local ok, result = splash:with_timeout(function()
+                        splash:wait(0.1)
+                        local ok, result = splash:with_timeout(function()
+                            splash:wait(0.1)
+                            return "deep inside, you cry cry cry"
+                        end, 0.3)
+                        return result
+                    end, 0.3)
+                    return result
+                end, 0.5)
+
+                return result
+            end
+            """)
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(resp.text, 'deep inside, you cry cry cry')

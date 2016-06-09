@@ -59,7 +59,7 @@ class AsyncBrowserCommand(AsyncCommand):
         )
 
 
-class AsyncLuaCommand(AsyncCommand):
+class AsyncCallbackCommand(AsyncCommand):
     pass
 
 
@@ -492,7 +492,7 @@ class Splash(BaseExposedObject):
         return cmd
 
     @command(async=True, sets_callback=True, decode_arguments=False)
-    def with_timeout(self, timeout, callback):
+    def with_timeout(self, callback, timeout):
         if timeout is None:
             ScriptError({
                 "argument": "timeout",
@@ -527,7 +527,7 @@ class Splash(BaseExposedObject):
 
         def timer_callback():
             run_coro.runner.stop()
-            cmd.return_result(False, "timeout_over")
+            cmd.return_result(None, "timeout_over")
 
         qtimer.timeout.connect(timer_callback)
 
@@ -544,8 +544,9 @@ class Splash(BaseExposedObject):
 
             qtimer.stop()
 
-            # TODO: make error more verbose (e.g. add line number)
-            cmd.return_result(False, str(ex.args[0]))
+            info = str(ex.args[0]["error"])
+
+            cmd.return_result(None, info)
 
         run_coro = self.get_coroutine_run_func(
             "splash:with_timeout", callback, coro_success, coro_error)
@@ -554,7 +555,7 @@ class Splash(BaseExposedObject):
             qtimer.start(timeout)
             run_coro.runner = run_coro()
 
-        cmd = AsyncLuaCommand("with_timeout", dict(
+        cmd = AsyncCallbackCommand("with_timeout", dict(
             callback=start
         ))
 
@@ -1167,11 +1168,11 @@ class Splash(BaseExposedObject):
         return self._wrapped
 
     def run_async_command(self, cmd):
-        """ Execute _AsyncBrowserCommand """
+        """ Execute _AsyncBrowserCommand or _AsyncCallbackCommand"""
         if isinstance(cmd, AsyncBrowserCommand):
             meth = getattr(self.tab, cmd.name)
             return meth(**cmd.kwargs)
-        elif isinstance(cmd, AsyncLuaCommand):
+        elif isinstance(cmd, AsyncCallbackCommand):
             cmd.kwargs["callback"]()
 
     def get_coroutine_run_func(self, name, callback,
