@@ -545,7 +545,6 @@ class Splash(BaseExposedObject):
             qtimer.stop()
 
             info = str(ex.args[0]["error"])
-
             cmd.return_result(None, info)
 
         run_coro = self.get_coroutine_run_func(
