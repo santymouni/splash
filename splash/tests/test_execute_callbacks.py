@@ -862,6 +862,28 @@ class WithTimeoutTest(BaseLuaRenderTest):
         self.assertErrorLineNumber(resp, 3)
         self.assertEqual(err['info']['splash_method'], 'with_timeout')
 
+    def test_empty_timeout(self):
+        resp = self.request_lua("""
+            function main(splash)
+                local ok, result = splash:with_timeout(function() end, nil)
+            end
+            """)
+
+        err = self.assertScriptError(resp, ScriptError.SPLASH_LUA_ERROR)
+        self.assertErrorLineNumber(resp, 3)
+        self.assertEqual(err['info']['splash_method'], 'with_timeout')
+
+    def test_not_number_timeout(self):
+        resp = self.request_lua("""
+            function main(splash)
+                local ok, result = splash:with_timeout(function() end, "1")
+            end
+            """)
+
+        err = self.assertScriptError(resp, ScriptError.SPLASH_LUA_ERROR)
+        self.assertErrorLineNumber(resp, 3)
+        self.assertEqual(err['info']['splash_method'], 'with_timeout')
+
     def test_bad_timeout(self):
         resp = self.request_lua("""
             function main(splash)
@@ -925,6 +947,24 @@ class WithTimeoutTest(BaseLuaRenderTest):
         self.assertStatusCode(resp, 200)
         self.assertEqual(resp.text, '2')
 
+    def test_callback_stop_with_error(self):
+        resp = self.request_lua("""
+            function main(splash)
+                local o = { val = 2 }
+                local ok, result = splash:with_timeout(function()
+                    splash:wait(0.5)
+                    error("raising an error")
+                    o["val"] = 1
+                end, 0.1)
+
+                splash:wait(1)
+
+                return o["val"]
+            end
+            """)
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(resp.text, '2')
+
     def test_nested_callbacks(self):
         resp = self.request_lua("""
             function main(splash)
@@ -946,3 +986,18 @@ class WithTimeoutTest(BaseLuaRenderTest):
             """)
         self.assertStatusCode(resp, 200)
         self.assertEqual(resp.text, 'deep inside, you cry cry cry')
+
+    def test_callback_returns_several_values(self):
+        resp = self.request_lua("""
+            treat = require("treat")
+
+            function main(splash)
+                local ok, result1, result2, result3 = splash:with_timeout(function()
+                    return 1, 2, 3
+                end, 0.1)
+
+                return result1, result2, result3
+            end
+            """)
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(resp.json(), [1, 2, 3])

@@ -74,6 +74,40 @@ local function raises_async(func)
   end
 end
 
+function print_r ( t )
+    local print_r_cache={}
+    local function sub_print_r(t,indent)
+        if (print_r_cache[tostring(t)]) then
+            print(indent.."*"..tostring(t))
+        else
+            print_r_cache[tostring(t)]=true
+            if (type(t)=="table") then
+                for pos,val in pairs(t) do
+                    if (type(val)=="table") then
+                        print(indent.."["..pos.."] => "..tostring(t).." {")
+                        sub_print_r(val,indent..string.rep(" ",string.len(pos)+8))
+                        print(indent..string.rep(" ",string.len(pos)+6).."}")
+                    elseif (type(val)=="string") then
+                        print(indent.."["..pos..'] => "'..val..'"')
+                    else
+                        print(indent.."["..pos.."] => "..tostring(val))
+                    end
+                end
+            else
+                print(indent..tostring(t))
+            end
+        end
+    end
+    if (type(t)=="table") then
+        print(tostring(t).." {")
+        sub_print_r(t,"  ")
+        print("}")
+    else
+        sub_print_r(t,"  ")
+    end
+    print()
+end
+
 --
 -- This decorator makes function yield the result instead of returning it
 --
@@ -109,6 +143,30 @@ local function sets_callback(func, storage)
   end
 end
 
+local function pack_callback_return_value(func)
+  return function(cb, ...)
+    if type(cb) ~= 'function' then
+      return func(cb, ...)
+    end
+
+    local mcb = function(...)
+      return table.pack(cb(...))
+    end
+
+    return func(mcb, ...)
+  end
+end
+
+local function unpack_result(func)
+  return function(...)
+    local ok, res_ok, res_res = pcall(func, ...)
+    if res_ok then
+      return ok, table.unpack(res_res)
+    else
+      error(res_res, 2)
+    end
+  end
+end
 
 local PRIVATE_PREFIX = "private_"
 
@@ -129,6 +187,10 @@ local function setup_commands(py_object, self, private_self, async)
   -- Create lua_object:<...> methods from py_object methods:
   for key, opts in pairs(py_object.commands) do
     local command = py_object[key]
+
+    if opts.pack_results then
+      command = pack_callback_return_value(command)
+    end
 
     if opts.sets_callback then
       command = sets_callback(command, py_object.tmp_storage)
@@ -155,6 +217,11 @@ local function setup_commands(py_object, self, private_self, async)
         command = raises_async(command)
       end
     end
+
+    if opts.pack_results then
+      command = unpack_result(command)
+    end
+
 
     if is_private_name(key) then
       local short_key = string.sub(key, PRIVATE_PREFIX:len()+1)

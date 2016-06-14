@@ -79,7 +79,7 @@ class StoredExceptions(object):
 
 
 def command(async=False, can_raise_async=False, table_argument=False,
-            sets_callback=False, decode_arguments=True):
+            sets_callback=False, decode_arguments=True, pack_results=True):
     """ Decorator for marking methods as commands available to Lua """
 
     if sets_callback:
@@ -110,6 +110,7 @@ def command(async=False, can_raise_async=False, table_argument=False,
         meth._is_async = async
         meth._can_raise_async = can_raise_async
         meth._sets_callback = sets_callback
+        meth._pack_results = pack_results
         return meth
 
     return decorator
@@ -278,6 +279,7 @@ def get_commands(obj):
                 'returns_error_flag': getattr(value, '_returns_error_flag', False),
                 'can_raise_async': getattr(value, '_can_raise_async', False),
                 'sets_callback': getattr(value, '_sets_callback', False),
+                'pack_results': getattr(value, '_pack_results', False),
             }
     return commands
 
@@ -491,7 +493,7 @@ class Splash(BaseExposedObject):
         ))
         return cmd
 
-    @command(async=True, sets_callback=True, decode_arguments=False)
+    @command(async=True, sets_callback=False, decode_arguments=False, pack_results=True)
     def with_timeout(self, callback, timeout):
         if timeout is None:
             ScriptError({
