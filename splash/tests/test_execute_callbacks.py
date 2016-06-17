@@ -859,7 +859,6 @@ class WithTimeoutTest(BaseLuaRenderTest):
             """)
 
         err = self.assertScriptError(resp, ScriptError.SPLASH_LUA_ERROR)
-        self.assertErrorLineNumber(resp, 3)
         self.assertEqual(err['info']['splash_method'], 'with_timeout')
 
     def test_empty_timeout(self):
@@ -870,7 +869,6 @@ class WithTimeoutTest(BaseLuaRenderTest):
             """)
 
         err = self.assertScriptError(resp, ScriptError.SPLASH_LUA_ERROR)
-        self.assertErrorLineNumber(resp, 3)
         self.assertEqual(err['info']['splash_method'], 'with_timeout')
 
     def test_not_number_timeout(self):
@@ -881,7 +879,6 @@ class WithTimeoutTest(BaseLuaRenderTest):
             """)
 
         err = self.assertScriptError(resp, ScriptError.SPLASH_LUA_ERROR)
-        self.assertErrorLineNumber(resp, 3)
         self.assertEqual(err['info']['splash_method'], 'with_timeout')
 
     def test_bad_timeout(self):
@@ -892,7 +889,6 @@ class WithTimeoutTest(BaseLuaRenderTest):
             """)
 
         err = self.assertScriptError(resp, ScriptError.SPLASH_LUA_ERROR)
-        self.assertErrorLineNumber(resp, 3)
         self.assertEqual(err['info']['splash_method'], 'with_timeout')
 
     def test_timeout(self):
@@ -927,7 +923,6 @@ class WithTimeoutTest(BaseLuaRenderTest):
             """)
 
         err = self.assertScriptError(resp, ScriptError.LUA_ERROR)
-        self.assertErrorLineNumber(resp, 3)
         self.assertEqual(err['info']['error'], 'error from callback')
 
     def test_callback_stop(self):
@@ -989,8 +984,6 @@ class WithTimeoutTest(BaseLuaRenderTest):
 
     def test_callback_returns_several_values(self):
         resp = self.request_lua("""
-            treat = require("treat")
-
             function main(splash)
                 local ok, result1, result2, result3 = splash:with_timeout(function()
                     return 1, 2, 3

@@ -79,7 +79,7 @@ class StoredExceptions(object):
 
 
 def command(async=False, can_raise_async=False, table_argument=False,
-            sets_callback=False, decode_arguments=True, pack_results=True):
+            sets_callback=False, decode_arguments=True, pack_results=False):
     """ Decorator for marking methods as commands available to Lua """
 
     if sets_callback:
@@ -493,7 +493,7 @@ class Splash(BaseExposedObject):
         ))
         return cmd
 
-    @command(async=True, sets_callback=False, decode_arguments=False, pack_results=True)
+    @command(async=True, sets_callback=True, decode_arguments=False, pack_results=True)
     def with_timeout(self, callback, timeout):
         if timeout is None:
             ScriptError({

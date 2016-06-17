@@ -74,40 +74,6 @@ local function raises_async(func)
   end
 end
 
-function print_r ( t )
-    local print_r_cache={}
-    local function sub_print_r(t,indent)
-        if (print_r_cache[tostring(t)]) then
-            print(indent.."*"..tostring(t))
-        else
-            print_r_cache[tostring(t)]=true
-            if (type(t)=="table") then
-                for pos,val in pairs(t) do
-                    if (type(val)=="table") then
-                        print(indent.."["..pos.."] => "..tostring(t).." {")
-                        sub_print_r(val,indent..string.rep(" ",string.len(pos)+8))
-                        print(indent..string.rep(" ",string.len(pos)+6).."}")
-                    elseif (type(val)=="string") then
-                        print(indent.."["..pos..'] => "'..val..'"')
-                    else
-                        print(indent.."["..pos.."] => "..tostring(val))
-                    end
-                end
-            else
-                print(indent..tostring(t))
-            end
-        end
-    end
-    if (type(t)=="table") then
-        print(tostring(t).." {")
-        sub_print_r(t,"  ")
-        print("}")
-    else
-        sub_print_r(t,"  ")
-    end
-    print()
-end
-
 --
 -- This decorator makes function yield the result instead of returning it
 --
@@ -119,7 +85,7 @@ local function yields_result(func)
     -- The code below could be just "return coroutine.yield(func(...))";
     -- it is more complex because of error handling: errors are catched
     -- and reraised to preserve the original line number.
-    local f = function (...)
+    local f = function(...)
       return table.pack(coroutine.yield(func(...)))
     end
     local ok, res = pcall(f, ...)
@@ -145,12 +111,12 @@ end
 
 local function pack_callback_return_value(func)
   return function(cb, ...)
-    if type(cb) ~= 'function' then
-      return func(cb, ...)
-    end
+    local mcb = cb
 
-    local mcb = function(...)
-      return table.pack(cb(...))
+    if type(cb) == 'function' then
+      mcb = function(...)
+        return { cb(...) }
+      end
     end
 
     return func(mcb, ...)
@@ -159,12 +125,13 @@ end
 
 local function unpack_result(func)
   return function(...)
-    local ok, res_ok, res_res = pcall(func, ...)
-    if res_ok then
-      return ok, table.unpack(res_res)
-    else
-      error(res_res, 2)
+    local ok, res = func(...)
+
+    if ok then
+      return ok, table.unpack(res)
     end
+
+    return ok, res
   end
 end
 
@@ -188,12 +155,12 @@ local function setup_commands(py_object, self, private_self, async)
   for key, opts in pairs(py_object.commands) do
     local command = py_object[key]
 
-    if opts.pack_results then
-      command = pack_callback_return_value(command)
-    end
-
     if opts.sets_callback then
       command = sets_callback(command, py_object.tmp_storage)
+    end
+
+    if opts.pack_results then
+      command = pack_callback_return_value(command)
     end
 
     command = drops_self_argument(command)
@@ -222,15 +189,13 @@ local function setup_commands(py_object, self, private_self, async)
       command = unpack_result(command)
     end
 
-
     if is_private_name(key) then
-      local short_key = string.sub(key, PRIVATE_PREFIX:len()+1)
+      local short_key = string.sub(key, PRIVATE_PREFIX:len() + 1)
       private_self[short_key] = command
     else
       self[key] = command
     end
   end
-
 end
 
 --
@@ -282,7 +247,7 @@ end
 --
 local function create_metatable()
   return {
-    __wrapped=true
+    __wrapped = true
   }
 end
 
