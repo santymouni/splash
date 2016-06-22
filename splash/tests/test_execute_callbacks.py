@@ -942,6 +942,20 @@ class WithTimeoutTest(BaseLuaRenderTest):
         self.assertStatusCode(resp, 200)
         self.assertEqual(resp.text, '2')
 
+    def test_callback_stop_after_error(self):
+        resp = self.request_lua("""
+            function main(splash)
+                local ok, error = splash:with_timeout(function()
+                    splash:wait(0.5)
+                    error('error_inside')
+                end, 0.1)
+
+                return error
+            end
+            """)
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(resp.text, 'timeout_over')
+
     def test_callback_stop_with_error(self):
         resp = self.request_lua("""
             function main(splash)
