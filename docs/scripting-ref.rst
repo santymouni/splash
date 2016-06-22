@@ -2237,13 +2237,13 @@ See notes about mouse events in :ref:`splash-mouse-click`.
 splash:with_timeout
 -------------------
 
-Run the callback with the allowed timeout
+Run the function with the allowed timeout
 
-**Signature:** ``ok, result = splash:with_timeout(callback, timeout)``
+**Signature:** ``ok, result = splash:with_timeout(func, timeout)``
 
 **Parameters:**
 
-* callback - the function to run
+* func - the function to run
 * timeout - timeout, in seconds
 
 **Returns:** ``ok, result`` pair. If ``ok`` is not ``true`` then error happened during
@@ -2259,10 +2259,10 @@ Example 1:
    :language: lua
 
 
-Note that the can interrupt the running callback only if some async function is called.
+Note that Splash can interrupt the running function only if some async function is called.
 Otherwise you should wait until the operation is finished.
 
-Example 2 - in this case the callback cannot be interrupted.
+Example 2 - in this case the passed function cannot be interrupted.
 
 .. code-block:: lua
 
@@ -2274,7 +2274,7 @@ Example 2 - in this case the callback cannot be interrupted.
         return result
     end
 
-Example 3 - in this case the callback can be interrupted.
+Example 3 - in this case the passed function can be interrupted.
 
 .. code-block:: lua
 

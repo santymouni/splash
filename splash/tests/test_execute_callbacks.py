@@ -851,7 +851,7 @@ class WithTimeoutTest(BaseLuaRenderTest):
         self.assertStatusCode(resp, 200)
         self.assertEqual(resp.text, '1')
 
-    def test_bad_callback(self):
+    def test_bad_function(self):
         resp = self.request_lua("""
             function main(splash)
                 local ok, result = splash:with_timeout("not a function", 0.1)
@@ -925,7 +925,7 @@ class WithTimeoutTest(BaseLuaRenderTest):
         err = self.assertScriptError(resp, ScriptError.LUA_ERROR)
         self.assertEqual(err['info']['error'], 'error from callback')
 
-    def test_callback_stop(self):
+    def test_function_stop(self):
         resp = self.request_lua("""
             function main(splash)
                 local o = { val = 2 }
@@ -942,7 +942,7 @@ class WithTimeoutTest(BaseLuaRenderTest):
         self.assertStatusCode(resp, 200)
         self.assertEqual(resp.text, '2')
 
-    def test_callback_stop_after_error(self):
+    def test_function_stop_after_error(self):
         resp = self.request_lua("""
             function main(splash)
                 local ok, error = splash:with_timeout(function()
@@ -956,7 +956,7 @@ class WithTimeoutTest(BaseLuaRenderTest):
         self.assertStatusCode(resp, 200)
         self.assertEqual(resp.text, 'timeout_over')
 
-    def test_callback_stop_with_error(self):
+    def test_function_stop_with_error(self):
         resp = self.request_lua("""
             function main(splash)
                 local o = { val = 2 }
@@ -974,7 +974,7 @@ class WithTimeoutTest(BaseLuaRenderTest):
         self.assertStatusCode(resp, 200)
         self.assertEqual(resp.text, '2')
 
-    def test_nested_callbacks(self):
+    def test_nested_functions(self):
         resp = self.request_lua("""
             function main(splash)
                 local ok, result = splash:with_timeout(function()
@@ -996,7 +996,7 @@ class WithTimeoutTest(BaseLuaRenderTest):
         self.assertStatusCode(resp, 200)
         self.assertEqual(resp.text, 'deep inside, you cry cry cry')
 
-    def test_callback_returns_several_values(self):
+    def test_function_returns_several_values(self):
         resp = self.request_lua("""
             function main(splash)
                 local ok, result1, result2, result3 = splash:with_timeout(function()

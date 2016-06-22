@@ -110,16 +110,16 @@ local function sets_callback(func, storage)
 end
 
 local function pack_callback_return_value(func)
-  return function(cb, ...)
-    local mcb = cb
+  return function(f, ...)
+    local my_f = f
 
-    if type(cb) == 'function' then
-      mcb = function(...)
-        return { cb(...) }
+    if type(f) == 'function' then
+      my_f = function(...)
+        return { f(...) }
       end
     end
 
-    return func(mcb, ...)
+    return func(my_f, ...)
   end
 end
 
