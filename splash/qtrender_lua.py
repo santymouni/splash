@@ -557,7 +557,7 @@ class Splash(BaseExposedObject):
             run_coro.runner = run_coro()
 
         cmd = AsyncFunctionCommand("with_timeout", dict(
-            callback=start
+            func=start
         ))
 
         return cmd
@@ -1174,7 +1174,9 @@ class Splash(BaseExposedObject):
             meth = getattr(self.tab, cmd.name)
             return meth(**cmd.kwargs)
         elif isinstance(cmd, AsyncFunctionCommand):
-            cmd.kwargs["callback"]()
+            return cmd.kwargs["func"]()
+
+        raise TypeError('Unknown async command type.')
 
     def get_coroutine_run_func(self, name, callback,
                                return_result=None, return_error=None):
