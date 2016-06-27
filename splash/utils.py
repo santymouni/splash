@@ -185,3 +185,45 @@ def requires_attr(attr_name, raiser):
             return meth(self, *args, **kwargs)
         return wrapper
     return decorator
+
+
+class PythonResult(object):
+    """Representation of Python operation result.
+
+    It is unwrapped in Lua interpreter by wraputils:unwrap_python_result and
+    must be updated in lockstep with it.
+
+    Comes in 4 flavours depending on the first element of the result:
+
+    - ``"result", [ arg1, ... ]``
+
+      Returns [ arg1, ... ] to Lua interpreter, normally used when a function
+      cannot fail because of non-user errors.
+
+    - ``"raise", [ arg1, ... ]``
+
+      Raises an error in Lua interpreter, normally used when a function fails
+      because of invalid user input.
+
+    - ``"ok", [ arg1, ... ]``
+
+      Returns ``true, [ arg1, ... ]`` to Lua interpreter, normally used when a
+      function succeeds when it could fail because of the environment,
+      e.g. site unavailable or missing file.
+
+    - ``"not_ok", [ arg1, ... ]``
+
+      Returns ``nil, [ arg1, ... ]`` to Lua interpreter, normally used when a
+      function fails because of the environment rather than the user input.
+
+    """
+    def __init__(self, *result):
+        if not result:
+            raise ValueError('PythonResult must have a designator')
+        if result[0] not in ('result', 'ok', 'not_ok', 'raise'):
+            raise ValueError('Invalid PythonResult designator: %r' % result[0])
+        self.result = result
+
+    def __repr__(self):
+        return '%s(%s)' % (type(self).__name__,
+                           ', '.join(repr(x) for x in self.result))
