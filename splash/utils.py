@@ -227,3 +227,15 @@ class PythonResult(object):
     def __repr__(self):
         return '%s(%s)' % (type(self).__name__,
                            ', '.join(repr(x) for x in self.result))
+
+
+def ensure_tuple(val):
+    """If val is not a tuple, make it a 1-tuple containing val.
+
+    This is useful for uniform processing of Lua output which can be either a
+    single value or a tuple of values.
+
+    """
+    if not isinstance(val, tuple):
+        return (val,)
+    return val

@@ -33,7 +33,7 @@ from splash.utils import (
     requires_attr,
     SplashJSONEncoder,
     to_unicode,
-    PythonResult)
+    PythonResult, ensure_tuple)
 from splash.jsutils import escape_js, get_process_errors_js
 from splash.qtutils import (
     REQUEST_ERRORS_SHORT,
@@ -230,13 +230,12 @@ def exceptions_as_return_values(meth):
         try:
             res = meth(self, *args, **kwargs)
             if isinstance(res, PythonResult):
-                return res.result
-            if not isinstance(res, tuple):
-                res = (res,)
-            res = (b'result',) + res
-            return res
+                res = res.result
+            else:
+                res = (b'result',) + ensure_tuple(res)
         except Exception as e:
-            return b'raise', repr(e)
+            res = (b'raise', repr(e))
+        return res
 
     return exceptions_as_return_values_wrapper
 
@@ -537,9 +536,7 @@ class Splash(BaseExposedObject):
                 return
 
             qtimer.stop()
-            if isinstance(result, tuple):
-                cmd.return_result(PythonResult('ok', *result))
-            cmd.return_result(PythonResult('ok', result))
+            cmd.return_result(PythonResult('ok', *ensure_tuple(result)))
 
         def coro_error(ex):
             if not qtimer.isActive():
@@ -761,7 +758,7 @@ class Splash(BaseExposedObject):
             self._objects_to_clear.add(req)
             self._objects_to_clear.add(resp)
             resp_wrapped = self.response_wrapper._create(resp)
-            cmd.return_result(resp_wrapped)
+            cmd.return_result(PythonResult('result', resp_wrapped))
 
         command_args = dict(
             url=url,

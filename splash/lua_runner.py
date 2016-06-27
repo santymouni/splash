@@ -8,7 +8,7 @@ import lupa
 
 from splash.exceptions import ScriptError
 from splash.lua import parse_error_message
-from splash.utils import truncated, PythonResult
+from splash.utils import truncated, PythonResult, ensure_tuple
 
 
 class AsyncCommand(object):
@@ -129,7 +129,9 @@ class BaseScriptRunner(six.with_metaclass(abc.ABCMeta, object)):
                 if self._is_first_iter:
                     self._is_first_iter = False
 
-                args = ()  # don't re-send the same value
+                # If cmd is a synchronous result, prepare it to be passed into
+                # the next coroutine step.
+                args = ensure_tuple(cmd)
                 cmd_repr = truncated(repr(cmd), max_length=400, msg='...[long result truncated]')
                 self.log("[lua_runner] got {}".format(cmd_repr))
                 self._print_instructions_used()
@@ -188,10 +190,9 @@ class BaseScriptRunner(six.with_metaclass(abc.ABCMeta, object)):
                 self._waiting_for_result_id = cmd.id
                 self.on_async_command(cmd)
                 return
-            elif isinstance(cmd, PythonResult):
+
+            if isinstance(cmd, PythonResult):
                 self.log("[lua_runner] got result {!r}".format(cmd))
-                args = (cmd,)
-                continue
             else:
                 self.log("[lua_runner] got non-command")
                 self.result = cmd
